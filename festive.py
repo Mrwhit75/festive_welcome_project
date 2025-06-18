@@ -1,4 +1,6 @@
-Prints a welcome message. It asks the user for their name and
+def introduce_self():
+  """
+  Prints a welcome message. It asks the user for their name and
   then delivers a greeting in either a Chris Rock tone (if the name is Jason, Afiya, Whitney, Ian, Frank, or Penny)
   or a Mr. Rogers tone (for any other name), including a festive touch.
   """
