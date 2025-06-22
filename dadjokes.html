@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dad Joke Generator</title>
+    <!-- Tailwind CSS CDN for easy styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles to achieve the playful light blue background and font */
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif; /* Casual font for playful feel */
+            background-color: #ADD8E6; /* Playful light blue */
+            color: #000000; /* Black text for visibility */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem; /* Add some padding for smaller screens */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+        .joke-container {
+            border: 3px dashed #FFA500; /* Dotted line around the joke, orange for playful heading */
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: 1.5rem; /* More rounded corners */
+            background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white background for joke block */
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2); /* Deeper shadow */
+            max-width: 600px; /* Max width for readability */
+            width: 100%;
+            position: relative; /* IMPORTANT: This makes it a positioning context for absolute children */
+        }
+        .punchline {
+            display: none; /* Initially hidden */
+            margin-top: 1rem;
+            font-weight: bold;
+        }
+        /* This is the dog GIF that appears with the punchline and stays */
+        #static-laughing-dog-gif {
+            display: none; /* Initially hidden */
+            margin-top: 1rem;
+            text-align: center;
+        }
+        .btn {
+            background-color: #32CD32; /* Bright green button */
+            color: white;
+            font-weight: bold;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px; /* Pill-shaped button */
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2); /* Button shadow */
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            border: none; /* Remove default button border */
+        }
+        .btn:hover, .btn:focus {
+            background-color: #228B22; /* Darker green on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+            box-shadow: 0 7px 12px rgba(0, 0, 0, 0.3);
+            outline: 2px solid #FFA500; /* Focus indicator */
+        }
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+        }
+        .question-text, .answer-text {
+            font-size: 1.5rem; /* Large enough for comfortable reading */
+            line-height: 1.8;
+            margin-bottom: 0.5rem;
+        }
+        .footer-text {
+            font-family: 'Georgia', serif; /* Casual font for footer */
+            font-size: 0.9rem;
+            color: #4A5568; /* Slightly darker grey for footer text */
+        }
+        .header-title {
+            font-size: 3rem; /* Larger header title */
+            color: #FFA500; /* Orange for heading */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3); /* Subtle text shadow */
+        }
+        /* Animation for pulse effect (optional, but requested in previous versions) */
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 4s infinite ease-in-out;
+        }
+
+        /* Styles for the new animated pop-up GIF */
+        #animated-laughing-dog-popup {
+            position: absolute; /* Changed from fixed to absolute */
+            bottom: -80px; /* Position it below the joke container */
+            left: 50%;
+            transform: translateX(-50%) scale(0); /* Start scaled down and horizontally centered */
+            width: 60px; /* Size of a quarter (roughly) */
+            height: 60px;
+            border-radius: 50%; /* Round frame */
+            border: 3px solid #FFA500; /* Orange frame */
+            overflow: hidden; /* Ensures image stays within the circular frame */
+            display: flex; /* For centering the image inside the div */
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.8); /* Slight transparent background */
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5); /* Pop effect shadow */
+            z-index: 1000; /* Ensure it's on top of other content */
+            opacity: 0; /* Start invisible */
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out; /* Smooth transition for appearance */
+            pointer-events: none; /* Allows clicks to pass through */
+        }
+        #animated-laughing-dog-popup.show {
+            transform: translateX(-50%) scale(1); /* Scale up to full size and maintain horizontal center */
+            opacity: 1; /* Fade in */
+        }
+        #animated-laughing-dog-popup img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Ensures the image covers the circle */
+            border-radius: 50%; /* Keeps the image circular */
+        }
+        
+        /* Error state for broken images */
+        .image-error {
+            display: none;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="flex flex-col items-center justify-center bg-white p-8 rounded-2xl shadow-2xl max-w-lg w-full text-center border-4 border-orange-400">
+
+        <!-- Header -->
+        <header class="mb-4">
+            <h1 class="header-title font-bold mb-4 flex items-center justify-center">
+                Dad Joke Generator
+            </h1>
+        </header>
+
+        <!-- Modern dad image placeholder - Fixed broken image -->
+        <div class="mx-auto rounded-full border-4 border-white shadow-lg mb-8" style="max-width: 150px; height: 150px; background-color: #FFA500; display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 3rem;">👨‍👧‍👦</span>
+        </div>
+
+        <!-- Joke Section -->
+        <div class="joke-container flex flex-col items-center">
+            <p id="joke-question" class="question-text text-gray-800 mb-4 flex items-center" role="status" aria-live="polite">
+                😄 Why don't scientists trust atoms?
+            </p>
+            <button id="reveal-button" class="btn mb-4" aria-label="Reveal the punchline">Reveal Punchline</button>
+            <p id="joke-answer" class="punchline answer-text text-gray-800 flex items-center" role="status" aria-live="polite">
+                😄 Because they make up everything!
+            </p>
+
+            <!-- Static Laughing Dog GIF that appears with the punchline -->
+            <div id="static-laughing-dog-gif" class="laughing-dog">
+                <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExODY5bW5ja3U1bTgzZHppcmFrMjFybjJtYzVhcGN3enpiMjgyZGU5MSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3oEjHAUOqG3lSS0f1C/giphy.gif" 
+                     alt="Giggling Muttley-like Dog" 
+                     class="mx-auto rounded-full"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div class="image-error">🐕 (Dog GIF unavailable)</div>
+            </div>
+            
+            <!-- This is the new animated pop-up GIF (now positioned below the joke) -->
+            <div id="animated-laughing-dog-popup" class="animated-popup">
+                <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExODY5bW5ja3U1bTgzZHppcmFrMjFybjJtYzVhcGN3enpiMjgyZGU5MSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3oEjHAUOqG3lSS0f1C/giphy.gif" 
+                     alt="Giggling Dog Pop-up"
+                     onerror="this.parentElement.style.display='none';">
+            </div>
+        </div>
+
+        <!-- Get New Joke Button -->
+        <button id="new-joke-button" class="btn mt-6 text-xl px-8 py-3" aria-label="Get a new dad joke">Tell Me Another One!</button>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-center footer-text">
+            <p>&copy; Made for giggles, 2025</p>
+        </footer>
+    </div>
+
+    <script>
+        // Array of Dad Jokes
+        const dadJokes = [
+            { question: "Why don't scientists trust atoms?", answer: "Because they make up everything!" },
+            { question: "What do you call a fish with no eyes?", answer: "Fsh!" },
+            { question: "I'm reading a book on anti-gravity.", answer: "It's impossible to put down!" },
+            { question: "Why did the scarecrow win an award?", answer: "Because he was outstanding in his field!" },
+            { question: "What do you call a fake noodle?", answer: "An impasta!" },
+            { question: "Did you hear about the guy who invented the knock-knock joke?", answer: "He won a 'no-bell' prize!" },
+            { question: "Why did the bicycle fall over?", answer: "Because it was two tired!" },
+            { question: "What's orange and sounds like a parrot?", answer: "A carrot!" }
+        ];
+
+        let currentJokeIndex = -1; // To keep track of the current joke
+
+        // Get elements from the HTML
+        const jokeQuestion = document.getElementById('joke-question');
+        const jokeAnswer = document.getElementById('joke-answer');
+        const revealButton = document.getElementById('reveal-button');
+        const newJokeButton = document.getElementById('new-joke-button');
+        const staticLaughingDogGif = document.getElementById('static-laughing-dog-gif');
+        const animatedLaughingDogPopup = document.getElementById('animated-laughing-dog-popup');
+
+        // Function to display a new joke
+        function displayNewJoke() {
+            // Safety check for empty array
+            if (dadJokes.length === 0) {
+                jokeQuestion.textContent = "😄 No jokes available!";
+                jokeAnswer.textContent = "😄 Check back later!";
+                return;
+            }
+            
+            // Select a random joke that is not the current one (if possible)
+            let newIndex;
+            let attempts = 0;
+            const maxAttempts = 10; // Prevent infinite loops
+            
+            do {
+                newIndex = Math.floor(Math.random() * dadJokes.length);
+                attempts++;
+            } while (newIndex === currentJokeIndex && dadJokes.length > 1 && attempts < maxAttempts);
+            
+            currentJokeIndex = newIndex;
+            const joke = dadJokes[currentJokeIndex];
+
+            // Update the question text with a smile emoji
+            jokeQuestion.textContent = `😄 ${joke.question}`;
+            // Update the answer text with a smile emoji
+            jokeAnswer.textContent = `😄 ${joke.answer}`;
+
+            // Hide the answer and both dog GIFs
+            jokeAnswer.style.display = 'none';
+            staticLaughingDogGif.style.display = 'none';
+            animatedLaughingDogPopup.classList.remove('show'); // Ensure pop-up is hidden
+
+            // Show the reveal button
+            revealButton.style.display = 'block';
+        }
+
+        // Function to reveal the punchline
+        function revealPunchline() {
+            // Show the answer and the static dog GIF
+            jokeAnswer.style.display = 'block';
+            staticLaughingDogGif.style.display = 'block';
+            
+            // Hide the reveal button
+            revealButton.style.display = 'none';
+
+            // Show the animated pop-up
+            animatedLaughingDogPopup.classList.add('show');
+
+            // Hide the animated pop-up after 3 seconds
+            setTimeout(() => {
+                animatedLaughingDogPopup.classList.remove('show');
+            }, 3000); // 3000 milliseconds = 3 seconds
+        }
+
+        // Event Listeners for buttons
+        revealButton.addEventListener('click', revealPunchline);
+        newJokeButton.addEventListener('click', displayNewJoke);
+
+        // Keyboard support
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                if (revealButton.style.display !== 'none') {
+                    revealPunchline();
+                } else {
+                    displayNewJoke();
+                }
+            }
+        });
+
+        // Display the first joke when the page loads
+        document.addEventListener('DOMContentLoaded', displayNewJoke);
+    </script>
+</body>
+</html>
